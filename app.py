@@ -723,19 +723,7 @@ elif page == "📊 EDA — Eksplorasi Data":
                           yaxis=dict(gridcolor='rgba(255,255,255,0.05)', title='Rasio Potensial (%)'))
         st.plotly_chart(fig, use_container_width=True, config={'displayModeBar': False})
 
-    # ── Raw Data Preview ─────────────────────────────────────────────────────
-    with st.expander("📄 Lihat Raw Data Terfilter (10 baris pertama)", expanded=False):
-        # Pilih kolom yang akan ditampilkan
-        preview_cols = [c for c in eda_df.columns if c not in ['Pelanggan Potensial', 'Status_Label']] + ['Pelanggan Potensial']
-        # Tampilkan dataframe dengan styling menggunakan .map (bukan .applymap)
-        styled_df = eda_df[preview_cols].head(10).style
-        styled_df = styled_df.background_gradient(subset=['Purchase Amount (USD)'], cmap='Blues')
-        styled_df = styled_df.map(
-            lambda v: 'color: #22c55e; font-weight:600' if v == 1 else
-                     'color: #f56565; font-weight:600' if v == 0 else '',
-            subset=['Pelanggan Potensial']
-        )
-        st.dataframe(styled_df, use_container_width=True)
+  
 
 # ─────────────────────────────────────────────
 # 11. HALAMAN: PERBANDINGAN MODEL
