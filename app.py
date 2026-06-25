@@ -748,7 +748,7 @@ elif page == "🤖 Perbandingan Model":
     ])
     st.dataframe(
         metrics_df.style
-            .applymap(lambda v: 'color: #fbbf24; font-weight:700' if v == '⭐ Best' else '', subset=['Status'])
+            .map(lambda v: 'color: #fbbf24; font-weight:700' if v == '⭐ Best' else '', subset=['Status'])
             .set_properties(**{'text-align': 'center'}),
         use_container_width=True, hide_index=True
     )
@@ -1033,7 +1033,7 @@ elif page == "🔮 Prediksi Interaktif":
             st.dataframe(
                 pred_df.style
                     .format({'Conf. Subscribe': '{:.3f}', 'Conf. Not Sub': '{:.3f}'})
-                    .applymap(lambda v: 'color:#22c55e; font-weight:700' if '✅' in str(v) else
+                    .map(lambda v: 'color:#22c55e; font-weight:700' if '✅' in str(v) else
                                         'color:#f56565; font-weight:700' if '❌' in str(v) else '',
                               subset=['Prediksi']),
                 hide_index=True, use_container_width=True
