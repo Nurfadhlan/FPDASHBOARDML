@@ -529,12 +529,16 @@ if page == "🏠 Overview":
 # ─────────────────────────────────────────────
 elif page == "📊 EDA — Eksplorasi Data":
 
-    st.markdown("<div class='hero-banner'><div class='hero-title'>📊 Exploratory Data Analysis</div><div class='hero-sub'>Visualisasi interaktif untuk memahami distribusi dan pola dalam dataset transaksi belanja.</div></div>", unsafe_allow_html=True)
+    st.markdown("""
+    <div class='hero-banner'>
+        <div class='hero-title'>📊 Exploratory Data Analysis</div>
+        <div class='hero-sub'>Visualisasi interaktif untuk memahami distribusi dan pola dalam dataset transaksi belanja.</div>
+    </div>
+    """, unsafe_allow_html=True)
 
-    # ── 🎛️ BLOK FITUR BARU: FILTER DINAMIS KATEGORI & MUSIM ──────────────────
+    # ── Filter Panel ──────────────────────────────────────────────────────
     st.markdown("<div class='section-title'>🎛️ Panel Kontrol & Filter Data</div>", unsafe_allow_html=True)
 
-    # Membuat filter multi-select di dalam kolom ekspander agar rapi
     with st.expander("🔍 Klik untuk Memfilter Kategori Produk, Musim, atau Gender", expanded=True):
         col_f1, col_f2, col_f3 = st.columns(3)
 
@@ -562,8 +566,7 @@ elif page == "📊 EDA — Eksplorasi Data":
                 default=available_genders
             )
 
-    # Terapkan logika filter ke dataframe salinan (eda_df)
-    # Jika filter kosong, default kembali ke seluruh data agar grafik tidak error blank
+    # Terapkan filter
     if not selected_categories:
         selected_categories = available_categories
     if not selected_seasons:
@@ -577,17 +580,18 @@ elif page == "📊 EDA — Eksplorasi Data":
         (df['Gender'].isin(selected_genders))
     ].copy()
 
-    # Informasikan jumlah data setelah difilter
+    if eda_df.empty:
+        st.warning("⚠️ Tidak ada data yang cocok dengan filter yang dipilih. Silakan ubah filter.")
+        st.stop()
+
     st.caption(f"💡 Menampilkan **{eda_df.shape[0]:,}** dari **{df.shape[0]:,}** baris data berdasarkan filter aktif.")
     st.markdown("<br>", unsafe_allow_html=True)
 
-
-    # ── Row 1: Distribusi Target & Gender ────────────────────────────────────
+    # ── Row 1: Distribusi Target & Gender ──────────────────────────────────
     c1, c2 = st.columns(2)
 
     with c1:
         st.markdown("<div class='section-title'>🎯 Distribusi Target</div>", unsafe_allow_html=True)
-        # REVISI: Menggunakan eda_df hasil filter
         target_counts = eda_df['Pelanggan Potensial'].value_counts().reset_index()
         target_counts.columns = ['Status', 'Count']
         target_counts['Label'] = target_counts['Status'].map({1: 'Pelanggan Potensial', 0: 'Pelanggan Kurang Potensial'})
@@ -595,75 +599,76 @@ elif page == "📊 EDA — Eksplorasi Data":
             target_counts, values='Count', names='Label',
             color_discrete_sequence=['#22c55e', '#f56565'],
             hole=0.55,
+            title="Proporsi Status Pelanggan"
         )
-        fig.update_layout(**PLOTLY_LAYOUT, height=300)
-        fig.update_traces(textfont_color='white', textfont_size=12)
-        st.plotly_chart(fig, use_container_width=True)
+        fig.update_layout(**PLOTLY_LAYOUT, height=350)
+        fig.update_traces(textposition='inside', textinfo='percent+label', textfont_color='white')
+        st.plotly_chart(fig, use_container_width=True, config={'displayModeBar': False})
 
     with c2:
         st.markdown("<div class='section-title'>👤 Distribusi Gender</div>", unsafe_allow_html=True)
-        # REVISI: Menggunakan eda_df hasil filter
         gen_sub = eda_df.groupby(['Gender', 'Pelanggan Potensial']).size().reset_index(name='Count')
         gen_sub['Status'] = gen_sub['Pelanggan Potensial'].map({1: 'Pelanggan Potensial', 0: 'Pelanggan Kurang Potensial'})
         fig = px.bar(
             gen_sub, x='Gender', y='Count', color='Status', barmode='group',
             color_discrete_map={'Pelanggan Potensial': '#22c55e', 'Pelanggan Kurang Potensial': '#f56565'},
+            title="Jumlah Pelanggan per Gender"
         )
-        fig.update_layout(**PLOTLY_LAYOUT, height=300,
+        fig.update_layout(**PLOTLY_LAYOUT, height=350,
                           xaxis=dict(gridcolor='rgba(255,255,255,0.05)'),
                           yaxis=dict(gridcolor='rgba(255,255,255,0.05)'))
-        st.plotly_chart(fig, use_container_width=True)
+        st.plotly_chart(fig, use_container_width=True, config={'displayModeBar': False})
 
     # ── Row 2: Distribusi Umur & Pembelian ──────────────────────────────────
     c1, c2 = st.columns(2)
 
     with c1:
         st.markdown("<div class='section-title'>📅 Distribusi Umur Pelanggan</div>", unsafe_allow_html=True)
-        # REVISI: Penamaan peta warna diubah sesuai string label target dinamis baru
         eda_df['Status_Label'] = eda_df['Pelanggan Potensial'].map({1: 'Pelanggan Potensial', 0: 'Pelanggan Kurang Potensial'})
         fig = px.histogram(
             eda_df, x='Age', color='Status_Label',
             nbins=20, barmode='overlay', opacity=0.75,
             color_discrete_map={'Pelanggan Potensial': '#667eea', 'Pelanggan Kurang Potensial': '#f56565'},
             labels={'Status_Label': 'Status', 'Age': 'Umur'},
+            title="Sebaran Umur Berdasarkan Status"
         )
-        fig.update_layout(**PLOTLY_LAYOUT, height=300,
+        fig.update_layout(**PLOTLY_LAYOUT, height=350,
                           xaxis=dict(gridcolor='rgba(255,255,255,0.05)'),
                           yaxis=dict(gridcolor='rgba(255,255,255,0.05)'))
-        st.plotly_chart(fig, use_container_width=True)
+        st.plotly_chart(fig, use_container_width=True, config={'displayModeBar': False})
 
     with c2:
         st.markdown("<div class='section-title'>💵 Distribusi Jumlah Pembelian</div>", unsafe_allow_html=True)
         fig = px.box(
-            eda_df, x=eda_df['Pelanggan Potensial'].map({1: 'Pelanggan Potensial', 0: 'Pelanggan Kurang Potensial'}),
-            y='Purchase Amount (USD)',
-            color=eda_df['Pelanggan Potensial'].map({1: 'Pelanggan Potensial', 0: 'Pelanggan Kurang Potensial'}),
+            eda_df, x='Status_Label', y='Purchase Amount (USD)',
+            color='Status_Label',
             color_discrete_map={'Pelanggan Potensial': '#22c55e', 'Pelanggan Kurang Potensial': '#f56565'},
-            labels={'x': 'Status', 'y': 'Purchase Amount (USD)'},
+            labels={'Status_Label': 'Status', 'y': 'Purchase Amount (USD)'},
+            title="Boxplot Pembelian per Status"
         )
-        fig.update_layout(**PLOTLY_LAYOUT, height=300,
+        fig.update_layout(**PLOTLY_LAYOUT, height=350,
                           xaxis=dict(gridcolor='rgba(255,255,255,0.05)'),
                           yaxis=dict(gridcolor='rgba(255,255,255,0.05)'))
-        st.plotly_chart(fig, use_container_width=True)
+        st.plotly_chart(fig, use_container_width=True, config={'displayModeBar': False})
 
-    # ── Row 3: Heatmap Kategori vs Musim & Purchase per Kategori ────────────
+    # ── Row 3: Heatmap Kategori × Musim & Rata-rata Pembelian per Kategori ──
     c1, c2 = st.columns(2)
 
     with c1:
         st.markdown("<div class='section-title'>🌡️ Heatmap Kategori × Musim (Avg Purchase)</div>", unsafe_allow_html=True)
-        # Jika kategori atau musim yang difilter menyisakan data kosong, tangani agar tidak crash
         if not eda_df.empty:
             pivot = eda_df.groupby(['Category', 'Season'])['Purchase Amount (USD)'].mean().reset_index()
             pivot_wide = pivot.pivot(index='Category', columns='Season', values='Purchase Amount (USD)')
             fig = px.imshow(
                 pivot_wide, text_auto='.1f',
                 color_continuous_scale='Viridis',
-                labels=dict(color="Avg Purchase ($)"),
+                labels=dict(color="Avg Purchase ($)", x="Musim", y="Kategori"),
+                title="Rata-rata Pembelian per Kategori & Musim"
             )
-            fig.update_layout(**PLOTLY_LAYOUT, height=300)
-            st.plotly_chart(fig, use_container_width=True)
+            fig.update_layout(**PLOTLY_LAYOUT, height=350)
+            st.plotly_chart(fig, use_container_width=True, config={'displayModeBar': False})
         else:
-            st.warning("Data kosong untuk kombinasi filter ini.")
+            st.info("Data kosong untuk heatmap.")
 
     with c2:
         st.markdown("<div class='section-title'>📦 Rata-rata Pembelian per Kategori</div>", unsafe_allow_html=True)
@@ -672,13 +677,15 @@ elif page == "📊 EDA — Eksplorasi Data":
         fig = px.bar(
             cat_avg, x='Purchase Amount (USD)', y='Category', orientation='h',
             color='Purchase Amount (USD)', color_continuous_scale='Viridis',
+            title="Rata-rata Pembelian per Kategori (ascending)",
+            labels={'Purchase Amount (USD)': 'Rata-rata Pembelian ($)'}
         )
-        fig.update_layout(**PLOTLY_LAYOUT, height=300,
+        fig.update_layout(**PLOTLY_LAYOUT, height=350,
                           xaxis=dict(gridcolor='rgba(255,255,255,0.05)'),
                           yaxis=dict(gridcolor='rgba(255,255,255,0.05)'))
-        st.plotly_chart(fig, use_container_width=True)
+        st.plotly_chart(fig, use_container_width=True, config={'displayModeBar': False})
 
-    # ── Row 4: Rate per Season & Category ──────────────────────────────────
+    # ── Row 4: Rasio Pelanggan Potensial per Musim & Kategori ──────────────
     st.markdown("<div class='section-title'>📈 Rasio Pelanggan Potensial per Musim & Kategori</div>", unsafe_allow_html=True)
     c1, c2 = st.columns(2)
 
@@ -691,12 +698,13 @@ elif page == "📊 EDA — Eksplorasi Data":
             x='Season', y='Sub Rate %',
             color='Sub Rate %', color_continuous_scale='Plasma',
             text=season_sub.sort_values('Sub Rate %', ascending=False)['Sub Rate %'].map(lambda x: f"{x:.1f}%"),
+            title="Rasio Pelanggan Potensial per Musim"
         )
         fig.update_traces(textposition='outside', textfont_color='white')
-        fig.update_layout(**PLOTLY_LAYOUT, height=280,
+        fig.update_layout(**PLOTLY_LAYOUT, height=300,
                           xaxis=dict(gridcolor='rgba(255,255,255,0.05)'),
                           yaxis=dict(gridcolor='rgba(255,255,255,0.05)', title='Rasio Potensial (%)'))
-        st.plotly_chart(fig, use_container_width=True)
+        st.plotly_chart(fig, use_container_width=True, config={'displayModeBar': False})
 
     with c2:
         cat_sub = eda_df.groupby('Category')['Pelanggan Potensial'].mean().reset_index()
@@ -707,23 +715,27 @@ elif page == "📊 EDA — Eksplorasi Data":
             x='Category', y='Sub Rate %',
             color='Sub Rate %', color_continuous_scale='Teal',
             text=cat_sub.sort_values('Sub Rate %', ascending=False)['Sub Rate %'].map(lambda x: f"{x:.1f}%"),
+            title="Rasio Pelanggan Potensial per Kategori"
         )
         fig.update_traces(textposition='outside', textfont_color='white')
-        fig.update_layout(**PLOTLY_LAYOUT, height=280,
+        fig.update_layout(**PLOTLY_LAYOUT, height=300,
                           xaxis=dict(gridcolor='rgba(255,255,255,0.05)'),
                           yaxis=dict(gridcolor='rgba(255,255,255,0.05)', title='Rasio Potensial (%)'))
-        st.plotly_chart(fig, use_container_width=True)
- # ── Raw Data Preview ─────────────────────────────────────────────────────
+        st.plotly_chart(fig, use_container_width=True, config={'displayModeBar': False})
+
+    # ── Raw Data Preview ─────────────────────────────────────────────────────
     with st.expander("📄 Lihat Raw Data Terfilter (10 baris pertama)", expanded=False):
+        # Pilih kolom yang akan ditampilkan
         preview_cols = [c for c in eda_df.columns if c not in ['Pelanggan Potensial', 'Status_Label']] + ['Pelanggan Potensial']
-        st.dataframe(
-            eda_df[preview_cols].head(10).style
-                .background_gradient(subset=['Purchase Amount (USD)'], cmap='Blues')
-                .map(lambda v: 'color: #22c55e; font-weight:600' if v == 1 else
-                                'color: #f56565; font-weight:600' if v == 0 else '',
-                     subset=['Pelanggan Potensial']),
-            use_container_width=True
+        # Tampilkan dataframe dengan styling menggunakan .map (bukan .applymap)
+        styled_df = eda_df[preview_cols].head(10).style
+        styled_df = styled_df.background_gradient(subset=['Purchase Amount (USD)'], cmap='Blues')
+        styled_df = styled_df.map(
+            lambda v: 'color: #22c55e; font-weight:600' if v == 1 else
+                     'color: #f56565; font-weight:600' if v == 0 else '',
+            subset=['Pelanggan Potensial']
         )
+        st.dataframe(styled_df, use_container_width=True)
 
 # ─────────────────────────────────────────────
 # 11. HALAMAN: PERBANDINGAN MODEL
